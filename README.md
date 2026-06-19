@@ -31,7 +31,7 @@ FreeFood is a SwiftUI iOS app for posting and discovering free leftover food fro
 | Nearby feed | Highlights the nearest available listing when location access is enabled. |
 | Search | Filter listings by location, title, or event details. |
 | Map view | Browse listings as map markers and open listing details from the map. |
-| On-device storage | Stores listings locally as JSON in Application Support. |
+| Public cloud sharing | Listings are stored in the CloudKit public database so everyone sees the same shared food. |
 | Auto-expiry | Purges listings after 7 days to keep stale food posts out of the feed. |
 
 ## Tech Stack
@@ -135,10 +135,10 @@ xcodebuild \
 
 ## Data & Privacy
 
-- Listings are stored on-device in `Application Support/FreeFood/listings.json`.
+- Listings are stored in the **CloudKit public database** (`iCloud.com.tertiaryinfotech.freefood`) so they are shared across all users. Anyone can browse without an account; posting requires the device to be signed into iCloud.
 - The app requests location access to rank nearby listings and show user-location map controls.
-- Food listing photos are selected locally through PhotosUI.
-- The current prototype does not send listing data to a backend service.
+- Food listing photos are selected through PhotosUI and stored as CloudKit `CKAsset`s (up to 3 per listing).
+- No separate account or password is required; CloudKit uses the device's iCloud identity.
 
 ## Deployment
 

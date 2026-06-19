@@ -1,44 +1,36 @@
+import CloudKit
 import Foundation
 
+/// Shared store backed by the **CloudKit public database** so every user sees the
+/// same listings. Anyone can browse without an iCloud account; posting requires the
+/// device to be signed into iCloud (CloudKit public-database write rule).
 @MainActor
 final class FoodListingStore: ObservableObject {
     @Published private(set) var listings: [FoodListing] = []
+    @Published private(set) var isLoading = false
+    /// User-facing message for the last sync/post problem (e.g. not signed into iCloud).
+    @Published var statusMessage: String?
 
-    private let fileURL: URL
-    private let encoder = JSONEncoder()
-    private let decoder = JSONDecoder()
+    static let containerIdentifier = "iCloud.com.tertiaryinfotech.freefood"
+    private let recordType = "FoodListing"
+    private let container = CKContainer(identifier: FoodListingStore.containerIdentifier)
+    private var publicDB: CKDatabase { container.publicCloudDatabase }
 
     init() {
-        let supportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let appURL = supportURL.appendingPathComponent("FreeFood", isDirectory: true)
-        try? FileManager.default.createDirectory(at: appURL, withIntermediateDirectories: true)
-        fileURL = appURL.appendingPathComponent("listings.json")
-
-        encoder.dateEncodingStrategy = .iso8601
-        decoder.dateDecodingStrategy = .iso8601
-        load()
+        Task { await refresh() }
     }
+
+    // MARK: - Reads (already-fetched, in-memory)
 
     var sortedByDate: [FoodListing] {
-        purgeExpiredIfNeeded()
-        return listings.sorted { $0.combinedStartDate < $1.combinedStartDate }
-    }
-
-    func add(_ listing: FoodListing) {
-        purgeExpiredIfNeeded()
-        listings.append(listing)
-        save()
-    }
-
-    func delete(_ listing: FoodListing) {
-        listings.removeAll { $0.id == listing.id }
-        save()
+        listings
+            .filter { $0.expiresAt > .now }
+            .sorted { $0.combinedStartDate < $1.combinedStartDate }
     }
 
     func search(_ query: String) -> [FoodListing] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return sortedByDate }
-
         return sortedByDate.filter {
             $0.locationName.localizedCaseInsensitiveContains(trimmed) ||
             $0.title.localizedCaseInsensitiveContains(trimmed) ||
@@ -46,30 +38,64 @@ final class FoodListingStore: ObservableObject {
         }
     }
 
+    /// Kept for source compatibility with callers; pruning happens on fetch.
     func purgeExpiredIfNeeded(now: Date = .now) {
         let active = listings.filter { $0.expiresAt > now }
-        guard active.count != listings.count else { return }
-        listings = active
-        save()
+        if active.count != listings.count { listings = active }
     }
 
-    private func load() {
-        guard let data = try? Data(contentsOf: fileURL) else {
-            listings = [FoodListing.sample]
-            save()
-            return
-        }
+    // MARK: - CloudKit sync
 
+    /// Pull the latest public listings into `listings`.
+    func refresh() async {
+        isLoading = true
+        defer { isLoading = false }
         do {
-            listings = try decoder.decode([FoodListing].self, from: data)
-            purgeExpiredIfNeeded()
-        } catch {
+            let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
+            query.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+            let (matchResults, _) = try await publicDB.records(matching: query, resultsLimit: 200)
+            let fetched = matchResults.compactMap { _, result -> FoodListing? in
+                guard let record = try? result.get() else { return nil }
+                return FoodListing(record: record)
+            }
+            listings = fetched.filter { $0.expiresAt > .now }
+            statusMessage = nil
+        } catch let error as CKError where error.code == .unknownItem {
+            // No records / schema not yet created in this environment — treat as empty.
             listings = []
+            statusMessage = nil
+        } catch {
+            statusMessage = "Couldn't load shared listings. Pull to refresh."
         }
     }
 
-    private func save() {
-        guard let data = try? encoder.encode(listings) else { return }
-        try? data.write(to: fileURL, options: [.atomic])
+    func add(_ listing: FoodListing) {
+        // Optimistic local insert so the UI updates immediately.
+        listings.insert(listing, at: 0)
+        Task {
+            do {
+                let record = try listing.toRecord()
+                _ = try await publicDB.save(record)
+                await refresh()
+            } catch let error as CKError where error.code == .notAuthenticated {
+                listings.removeAll { $0.id == listing.id }
+                statusMessage = "Sign in to iCloud (Settings → your name → iCloud) to share food."
+            } catch {
+                listings.removeAll { $0.id == listing.id }
+                statusMessage = "Couldn't share that listing. Please try again."
+            }
+        }
+    }
+
+    func delete(_ listing: FoodListing) {
+        listings.removeAll { $0.id == listing.id }
+        Task {
+            do {
+                try await publicDB.deleteRecord(withID: CKRecord.ID(recordName: listing.id.uuidString))
+            } catch {
+                // A record created by another user can't be deleted; re-sync to restore truth.
+                await refresh()
+            }
+        }
     }
 }
