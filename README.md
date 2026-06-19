@@ -1,6 +1,6 @@
 <div align="center">
 
-# FreeFood
+# PotLuckHub
 
 [![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://www.swift.org/)
 [![iOS](https://img.shields.io/badge/iOS-17%2B-blue.svg)](https://developer.apple.com/ios/)
@@ -16,11 +16,11 @@
 
 ## Screenshot
 
-![FreeFood iOS screenshot](screenshot.png)
+![PotLuckHub iOS screenshot](screenshot.png)
 
 ## About
 
-FreeFood is a SwiftUI iOS app for posting and discovering free leftover food from events, offices, meetups, and community spaces. It focuses on fast local sharing: create a listing with photos, location, schedule, and details; browse a searchable feed; and view available food on an Apple Map.
+PotLuckHub is a SwiftUI iOS app for posting and discovering free leftover food from events, offices, meetups, and community spaces. It focuses on fast local sharing: create a listing with photos, location, schedule, and details; browse a searchable feed; and view available food on an Apple Map.
 
 ### Key Features
 
@@ -49,7 +49,7 @@ FreeFood is a SwiftUI iOS app for posting and discovering free leftover food fro
 ## Architecture
 
 ```text
-FreeFood
+PotLuckHub
 |
 +-- SwiftUI App Entry
 |   +-- FreeFoodApp
