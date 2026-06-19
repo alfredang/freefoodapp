@@ -1,0 +1,6 @@
+.env
+*.p8
+build/
+DerivedData/
+*.xcarchive
+*.ipa
