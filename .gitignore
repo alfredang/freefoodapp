@@ -4,3 +4,6 @@ build/
 DerivedData/
 *.xcarchive
 *.ipa
+
+.playwright-mcp/
+.DS_Store
