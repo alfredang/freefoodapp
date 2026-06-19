@@ -51,8 +51,8 @@ final class FoodListingStore: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         do {
+            // No server-side sort (avoids needing a sortable index); sorted client-side by sortedByDate.
             let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
-            query.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
             let (matchResults, _) = try await publicDB.records(matching: query, resultsLimit: 200)
             let fetched = matchResults.compactMap { _, result -> FoodListing? in
                 guard let record = try? result.get() else { return nil }
