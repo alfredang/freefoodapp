@@ -77,6 +77,10 @@ Then `gh secret list --repo $REPO` should show all six. Trigger with a push or
   draft instead of creating duplicates.
 - **New versions need metadata + screenshots.** When `ci_submit.py` creates the next version it copies
   the previous version's localization and uploads `ci/screenshots/APP_IPHONE_67/*` (commit real ones).
+- **Release notes from `CHANGELOG.md`.** `ci_submit.py` reads the section matching the version being
+  submitted (falling back to `[Unreleased]`) and sets the version's **What's New**. It must run while the
+  version is editable, so the script cancels the active review first, then sets it, then resubmits. This is a
+  no-op on a first release (App Store allows "What's New" only on updates of an already-released app).
 - **App Privacy + age rating** are app-level and carry across versions — set once in the UI
   (see the `app-store-submission` skill); CI does not touch them.
 

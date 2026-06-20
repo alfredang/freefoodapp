@@ -17,7 +17,7 @@ Subcommands:
                                        ensure version v exists (create+copy metadata/
                                        screenshots if new), attach build n, submit for review
 """
-import argparse, base64, hashlib, json, os, sys, time, urllib.error, urllib.request
+import argparse, base64, hashlib, json, os, re, sys, time, urllib.error, urllib.request
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
@@ -130,6 +130,66 @@ def cmd_wait_build(a):
 def localization(tok, vid):
     s, d = jget("GET", f"/v1/appStoreVersions/{vid}/appStoreVersionLocalizations", tok)
     return d.get("data", [])
+
+
+def changelog_notes(version, path="CHANGELOG.md"):
+    """Release notes for `version` from CHANGELOG.md (falls back to the [Unreleased] section),
+    as a plain-text bullet list for the App Store 'What's New' field."""
+    try:
+        text = open(path).read()
+    except OSError:
+        return None
+    chosen, unreleased = None, None
+    for block in re.split(r"(?m)^##\s+", text)[1:]:
+        head = block.splitlines()[0]
+        if f"[{version}]" in head:
+            chosen = block
+        elif "Unreleased" in head:
+            unreleased = block
+    block = chosen or unreleased
+    if not block:
+        return None
+    bullets = []
+    for line in block.splitlines():
+        s = line.strip()
+        if s.startswith("- "):
+            bullets.append("• " + re.sub(r"[*`]", "", s[2:]).strip())
+    if not bullets:
+        return None
+    return "\n".join(bullets)[:3990]
+
+
+def cancel_active(tok, aid):
+    """Cancel any in-review submission so the version becomes editable again."""
+    s, d = jget("GET", f"/v1/reviewSubmissions?filter[app]={aid}&limit=20", tok)
+    for x in d.get("data", []):
+        if x["attributes"]["state"] in ("WAITING_FOR_REVIEW", "IN_REVIEW", "UNRESOLVED_ISSUES"):
+            call("PATCH", f"/v1/reviewSubmissions/{x['id']}",
+                 {"data": {"type": "reviewSubmissions", "id": x["id"], "attributes": {"canceled": True}}}, tok)
+            print(f"cancelled active review {x['id']}", flush=True)
+
+
+def set_whats_new(tok, vid, notes):
+    """Record the changelog as the version's 'What's New' (ignored on a first release).
+    The version must be editable, so retry while a just-cancelled review is still locking it."""
+    if not notes:
+        return
+    locs = localization(tok, vid)
+    if not locs:
+        return
+    lid = locs[0]["id"]
+    for _ in range(8):
+        s, b = call("PATCH", f"/v1/appStoreVersionLocalizations/{lid}",
+                    {"data": {"type": "appStoreVersionLocalizations", "id": lid,
+                              "attributes": {"whatsNew": notes}}}, tok)
+        if s < 300:
+            print("whatsNew set from CHANGELOG", flush=True)
+            return
+        if s == 409:  # version still locked by the cancelling review — wait and retry
+            time.sleep(5)
+            continue
+        break
+    print(f"whatsNew not set ({s}) — likely first release", flush=True)
 
 
 def copy_metadata(tok, src_vid, dst_vid):
@@ -263,6 +323,8 @@ def submit_for_review(tok, aid, vid):
 def cmd_submit(a):
     tok = token(); aid = app_id(tok)
     vid, created = ensure_version(tok, aid, a.version, a.screenshots_dir)
+    cancel_active(tok, aid)                                    # free the version for edits
+    set_whats_new(tok, vid, changelog_notes(a.version))       # record CHANGELOG as What's New
     attach_build(tok, aid, vid, a.build)
     submit_for_review(tok, aid, vid)
 

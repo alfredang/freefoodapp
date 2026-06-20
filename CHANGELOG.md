@@ -20,6 +20,7 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/).
 - CloudKit schema gains `recurrence`, `likes`, and `country` fields.
 - CI `ci_submit` is resilient to the review-submission cancel/attach race (retries reusing an empty draft).
 - CI builds with **Xcode 26 / iOS 26 SDK** (now required by App Store Connect).
+- **Release notes are auto-recorded** — at submit time, the matching CHANGELOG section is written to the App Store "What's New in This Version" (no-op on a first release).
 
 ## [1.1] — CloudKit public sharing
 Builds: 2, 3, and CI-built builds.
