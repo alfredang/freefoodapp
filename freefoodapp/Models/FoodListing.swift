@@ -1,6 +1,21 @@
 import CoreLocation
 import Foundation
 
+/// How often a free-food giveaway repeats. Lets shops/bakeries/stalls post once for a
+/// regular giveaway instead of re-creating a listing every time.
+enum Recurrence: String, Codable, Hashable, CaseIterable, Identifiable {
+    case none, daily, weekly
+
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .none: return "One-time"
+        case .daily: return "Daily"
+        case .weekly: return "Weekly"
+        }
+    }
+}
+
 struct FoodListing: Identifiable, Codable, Hashable {
     var id = UUID()
     var title: String
@@ -11,36 +26,53 @@ struct FoodListing: Identifiable, Codable, Hashable {
     var startTime: Date
     var endTime: Date
     var photos: [Data]
+    var recurrence: Recurrence = .none
+    var likes: Int = 0
+    /// ISO country code (e.g. "SG") of the pickup location, for country-based filtering.
+    var country: String = ""
     var createdAt = Date()
 
     var expiresAt: Date {
         Calendar.current.date(byAdding: .day, value: 7, to: createdAt) ?? createdAt
     }
 
-    var combinedStartDate: Date {
+    private func combine(_ time: Date, on day: Date) -> Date {
         Calendar.current.date(
-            bySettingHour: Calendar.current.component(.hour, from: startTime),
-            minute: Calendar.current.component(.minute, from: startTime),
+            bySettingHour: Calendar.current.component(.hour, from: time),
+            minute: Calendar.current.component(.minute, from: time),
             second: 0,
-            of: date
-        ) ?? date
+            of: day
+        ) ?? day
     }
 
-    var combinedEndDate: Date {
-        Calendar.current.date(
-            bySettingHour: Calendar.current.component(.hour, from: endTime),
-            minute: Calendar.current.component(.minute, from: endTime),
-            second: 0,
-            of: date
-        ) ?? date
+    /// For recurring listings, the next occurrence whose end time is still in the future;
+    /// for one-time listings, just `date`.
+    var effectiveDate: Date {
+        guard recurrence != .none else { return date }
+        let cal = Calendar.current
+        let unit: Calendar.Component = recurrence == .daily ? .day : .weekOfYear
+        var day = date
+        var guardCount = 0
+        while combine(endTime, on: day) < .now, guardCount < 1000 {
+            guard let next = cal.date(byAdding: unit, value: 1, to: day) else { break }
+            day = next
+            guardCount += 1
+        }
+        return day
     }
 
-    /// A past event: the food's end time has already passed, so it's no longer available.
+    var combinedStartDate: Date { combine(startTime, on: effectiveDate) }
+    var combinedEndDate: Date { combine(endTime, on: effectiveDate) }
+
+    /// A past event: the food's end time has already passed (for recurring listings the
+    /// date rolls forward, so they don't count as ended).
     var hasEnded: Bool { combinedEndDate < .now }
 
-    /// Shown in the shared feed only while the event is still upcoming/ongoing
-    /// (not a past event) and the post is less than 7 days old. Anything else is purged.
-    var isActive: Bool { !hasEnded && expiresAt > .now }
+    /// Recurring listings stay live indefinitely (they keep rolling forward). One-time
+    /// listings are shown only while upcoming/ongoing and posted within the last 7 days.
+    var isActive: Bool {
+        recurrence != .none ? true : (!hasEnded && expiresAt > .now)
+    }
 
     func distance(from location: CLLocation?) -> CLLocationDistance? {
         guard let location else { return nil }

@@ -38,6 +38,9 @@ extension FoodListing {
             startTime: startTime,
             endTime: endTime,
             photos: photos,
+            recurrence: Recurrence(rawValue: record["recurrence"] as? String ?? "none") ?? .none,
+            likes: (record["likes"] as? Int) ?? 0,
+            country: (record["country"] as? String) ?? "",
             createdAt: createdAt
         )
     }
@@ -56,6 +59,9 @@ extension FoodListing {
         record["endTime"] = endTime as CKRecordValue
         record["createdAt"] = createdAt as CKRecordValue
         record["expiresAt"] = expiresAt as CKRecordValue
+        record["recurrence"] = recurrence.rawValue as CKRecordValue
+        record["likes"] = likes as CKRecordValue
+        record["country"] = country as CKRecordValue
 
         let tmp = FileManager.default.temporaryDirectory
         for (index, data) in photos.prefix(3).enumerated() {

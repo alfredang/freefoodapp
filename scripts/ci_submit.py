@@ -218,37 +218,46 @@ def attach_build(tok, aid, vid, build_number):
     print(f"attached build {build_number}: {s}", flush=True)
 
 
-def cancel_active(tok, aid):
+def submit_for_review(tok, aid, vid):
+    # Cancel anything actively in review; remember an empty draft to reuse.
     s, d = jget("GET", f"/v1/reviewSubmissions?filter[app]={aid}&limit=20", tok)
+    draft = None
     for x in d.get("data", []):
-        if x["attributes"]["state"] in ("WAITING_FOR_REVIEW", "IN_REVIEW", "UNRESOLVED_ISSUES"):
+        st = x["attributes"]["state"]
+        if st in ("WAITING_FOR_REVIEW", "IN_REVIEW", "UNRESOLVED_ISSUES"):
             call("PATCH", f"/v1/reviewSubmissions/{x['id']}",
                  {"data": {"type": "reviewSubmissions", "id": x["id"], "attributes": {"canceled": True}}}, tok)
             print(f"cancelled active review {x['id']}", flush=True)
+        elif st == "READY_FOR_REVIEW":
+            draft = x["id"]  # reuse a leftover draft instead of creating another
 
-
-def submit_for_review(tok, aid, vid):
-    cancel_active(tok, aid)
-    time.sleep(3)
-    s, b = call("POST", "/v1/reviewSubmissions",
-                {"data": {"type": "reviewSubmissions",
-                          "attributes": {"platform": "IOS"},
-                          "relationships": {"app": {"data": {"type": "apps", "id": aid}}}}}, tok)
-    if s >= 300:
-        sys.exit(f"create reviewSubmission failed: {b[:400]}")
-    rs_id = json.loads(b)["data"]["id"]
-    s, b = call("POST", "/v1/reviewSubmissionItems",
-                {"data": {"type": "reviewSubmissionItems",
-                          "relationships": {
-                              "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": rs_id}},
-                              "appStoreVersion": {"data": {"type": "appStoreVersions", "id": vid}}}}}, tok)
-    if s >= 300:
-        sys.exit(f"add review item failed: {b[:400]}")
-    s, b = call("PATCH", f"/v1/reviewSubmissions/{rs_id}",
-                {"data": {"type": "reviewSubmissions", "id": rs_id, "attributes": {"submitted": True}}}, tok)
-    if s >= 300:
-        sys.exit(f"submit failed: {b[:400]}")
-    print("SUBMITTED for review", flush=True)
+    # Cancelling is async and keeps "holding" the version, so retry create/add/submit.
+    last = ""
+    for attempt in range(15):
+        if not draft:
+            s, b = call("POST", "/v1/reviewSubmissions",
+                        {"data": {"type": "reviewSubmissions", "attributes": {"platform": "IOS"},
+                                  "relationships": {"app": {"data": {"type": "apps", "id": aid}}}}}, tok)
+            if s >= 300:
+                last = b; time.sleep(6); continue
+            draft = json.loads(b)["data"]["id"]
+        s, items = jget("GET", f"/v1/reviewSubmissions/{draft}/items", tok)
+        if not items.get("data"):
+            s, b = call("POST", "/v1/reviewSubmissionItems",
+                        {"data": {"type": "reviewSubmissionItems",
+                                  "relationships": {
+                                      "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": draft}},
+                                      "appStoreVersion": {"data": {"type": "appStoreVersions", "id": vid}}}}}, tok)
+            if s >= 300:  # version still held by the cancelling submission — wait and retry
+                last = b; time.sleep(6); continue
+        s, b = call("PATCH", f"/v1/reviewSubmissions/{draft}",
+                    {"data": {"type": "reviewSubmissions", "id": draft, "attributes": {"submitted": True}}}, tok)
+        if s < 300:
+            print("SUBMITTED for review", flush=True)
+            return
+        last = b
+        time.sleep(6)
+    sys.exit(f"submit failed after retries: {last[:400]}")
 
 
 def cmd_submit(a):

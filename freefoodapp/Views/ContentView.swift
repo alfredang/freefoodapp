@@ -3,17 +3,31 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var store: FoodListingStore
     @EnvironmentObject private var locationManager: LocationManager
+    @EnvironmentObject private var settings: AppSettings
     @State private var searchText = ""
     @State private var showingAddListing = false
     @State private var selectedTab = 0
 
-    private var dateSortedListings: [FoodListing] {
-        store.search(searchText)
+    /// Active listings after applying the user's country + distance filters. Subscribed
+    /// recurring giveaways are always shown regardless of the filters.
+    private var visibleListings: [FoodListing] {
+        store.search(searchText).filter { listing in
+            if settings.isSubscribed(listing.id) { return true }
+            if settings.onlyMyCountry, !settings.myCountry.isEmpty,
+               !listing.country.isEmpty, listing.country != settings.myCountry {
+                return false
+            }
+            if settings.limitDistance, let loc = locationManager.currentLocation,
+               let distance = listing.distance(from: loc), distance > settings.maxDistanceKm * 1_000 {
+                return false
+            }
+            return true
+        }
     }
 
     private var nearestListing: FoodListing? {
-        guard locationManager.currentLocation != nil else { return dateSortedListings.first }
-        return dateSortedListings.min {
+        guard locationManager.currentLocation != nil else { return visibleListings.first }
+        return visibleListings.min {
             ($0.distance(from: locationManager.currentLocation) ?? .greatestFiniteMagnitude) <
             ($1.distance(from: locationManager.currentLocation) ?? .greatestFiniteMagnitude)
         }
@@ -22,7 +36,7 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
-                ListingFeedView(nearestListing: nearestListing, listings: dateSortedListings, searchText: $searchText)
+                ListingFeedView(nearestListing: nearestListing, listings: visibleListings, searchText: $searchText)
                     .navigationTitle("Free Food")
                     .toolbar {
                         ToolbarItem(placement: .topBarTrailing) {
@@ -39,12 +53,16 @@ struct ContentView: View {
             .tag(0)
 
             NavigationStack {
-                FoodMapView(listings: dateSortedListings)
+                FoodMapView(listings: visibleListings)
                     .navigationTitle("Map")
                     .navigationBarTitleDisplayMode(.inline)
             }
             .tabItem { Label("Map", systemImage: "map") }
             .tag(1)
+
+            SettingsView()
+                .tabItem { Label("Settings", systemImage: "gearshape") }
+                .tag(2)
         }
         .sheet(isPresented: $showingAddListing) {
             AddListingView()

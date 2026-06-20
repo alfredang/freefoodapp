@@ -70,6 +70,10 @@ def combined_end_ms(date_ms, end_ms):
 
 
 def is_stale(fields, now):
+    # Never delete recurring giveaways — they roll forward to the next occurrence.
+    recurrence = (fields.get("recurrence") or {}).get("value")
+    if recurrence and recurrence != "none":
+        return False
     expires = (fields.get("expiresAt") or {}).get("value")
     if expires is not None and expires < now:
         return True

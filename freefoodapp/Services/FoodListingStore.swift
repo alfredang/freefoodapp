@@ -138,4 +138,22 @@ final class FoodListingStore: ObservableObject {
             }
         }
     }
+
+    /// Increment a listing's shared like count (best-effort; the caller tracks one-per-device).
+    func like(_ listing: FoodListing) {
+        if let i = fetched.firstIndex(where: { $0.id == listing.id }) {
+            fetched[i].likes += 1
+            rebuild()
+        }
+        Task {
+            let rid = CKRecord.ID(recordName: listing.id.uuidString)
+            do {
+                let record = try await publicDB.record(for: rid)
+                record["likes"] = ((record["likes"] as? Int) ?? 0) + 1
+                _ = try await publicDB.save(record)
+            } catch {
+                // ignore — like is non-critical
+            }
+        }
+    }
 }

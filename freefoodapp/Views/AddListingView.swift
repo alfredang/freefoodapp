@@ -12,22 +12,42 @@ struct AddListingView: View {
     @State private var date = Date()
     @State private var startTime = Date()
     @State private var endTime = Calendar.current.date(byAdding: .hour, value: 1, to: .now) ?? .now
+    @State private var recurrence: Recurrence = .none
     @State private var selectedLocationName = ""
     @State private var selectedCoordinate: Coordinate?
+    @State private var selectedCountry = ""
     @State private var photoItems: [PhotosPickerItem] = []
     @State private var photos: [Data] = []
     @State private var locationTask: Task<Void, Never>?
+
+    // Lightweight human check to deter bots / fake listings.
+    @State private var challenge = AddListingView.makeChallenge()
+    @State private var challengeAnswer = ""
+
+    private var humanVerified: Bool {
+        challengeAnswer.trimmingCharacters(in: .whitespaces).uppercased() == challenge
+    }
 
     private var canSave: Bool {
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !details.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         selectedCoordinate != nil &&
-        endTime > startTime
+        endTime > startTime &&
+        humanVerified
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Label(
+                        "FreeFood helps reduce food waste. Please post only real, available food — don't create fictitious events.",
+                        systemImage: "leaf.fill"
+                    )
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                }
+
                 Section("Photos") {
                     PhotosPicker(selection: $photoItems, maxSelectionCount: 3, matching: .images) {
                         Label("Choose up to 3 photos", systemImage: "photo.on.rectangle.angled")
@@ -45,13 +65,24 @@ struct AddListingView: View {
                     }
                 }
 
-                Section("Event") {
+                Section {
                     TextField("Food title", text: $title)
                     TextField("Event details", text: $details, axis: .vertical)
                         .lineLimit(3...6)
                     DatePicker("Date", selection: $date, displayedComponents: .date)
                     DatePicker("Start time", selection: $startTime, displayedComponents: .hourAndMinute)
                     DatePicker("End time", selection: $endTime, displayedComponents: .hourAndMinute)
+                    Picker("Repeats", selection: $recurrence) {
+                        ForEach(Recurrence.allCases) { r in
+                            Text(r.label).tag(r)
+                        }
+                    }
+                } header: {
+                    Text("Event")
+                } footer: {
+                    if recurrence != .none {
+                        Text("Recurring giveaways stay listed and roll forward to the next \(recurrence == .daily ? "day" : "week"). Great for bakeries and stalls.")
+                    }
                 }
 
                 Section("Location") {
@@ -85,6 +116,25 @@ struct AddListingView: View {
                             .foregroundStyle(.green)
                     }
                 }
+
+                Section("Quick human check") {
+                    HStack {
+                        Text(challenge)
+                            .font(.system(.title2, design: .monospaced).weight(.bold))
+                            .tracking(6)
+                            .strikethrough(color: .secondary.opacity(0.4))
+                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .background(.gray.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
+                        Button {
+                            challenge = AddListingView.makeChallenge()
+                            challengeAnswer = ""
+                        } label: { Image(systemName: "arrow.clockwise") }
+                        .buttonStyle(.borderless)
+                    }
+                    TextField("Type the code above", text: $challengeAnswer)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                }
             }
             .navigationTitle("Share food")
             .navigationBarTitleDisplayMode(.inline)
@@ -103,6 +153,11 @@ struct AddListingView: View {
         }
     }
 
+    private static func makeChallenge() -> String {
+        let chars = Array("ABCDEFGHJKLMNPQRSTUVWXYZ23456789")
+        return String((0..<4).map { _ in chars.randomElement()! })
+    }
+
     private func runLocationSearch() {
         locationTask?.cancel()
         locationTask = Task {
@@ -116,6 +171,7 @@ struct AddListingView: View {
             latitude: item.placemark.coordinate.latitude,
             longitude: item.placemark.coordinate.longitude
         )
+        selectedCountry = item.placemark.isoCountryCode ?? ""
         searchService.query = selectedLocationName
         searchService.results = []
     }
@@ -152,7 +208,9 @@ struct AddListingView: View {
             date: date,
             startTime: startTime,
             endTime: endTime,
-            photos: Array(photos.prefix(3))
+            photos: Array(photos.prefix(3)),
+            recurrence: recurrence,
+            country: selectedCountry
         ))
         dismiss()
     }

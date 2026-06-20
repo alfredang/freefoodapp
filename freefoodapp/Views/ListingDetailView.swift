@@ -3,17 +3,28 @@ import SwiftUI
 
 struct ListingDetailView: View {
     @EnvironmentObject private var store: FoodListingStore
+    @EnvironmentObject private var settings: AppSettings
     @Environment(\.dismiss) private var dismiss
     let listing: FoodListing
 
     @State private var camera: MapCameraPosition
+    @State private var likeCount: Int
 
     init(listing: FoodListing) {
         self.listing = listing
+        _likeCount = State(initialValue: listing.likes)
         _camera = State(initialValue: .region(MKCoordinateRegion(
             center: listing.coordinate.clLocationCoordinate2D,
             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
         )))
+    }
+
+    private var shareText: String {
+        var s = "Free food: \(listing.title) at \(listing.locationName) — "
+        s += "\(listing.combinedStartDate.formatted(date: .abbreviated, time: .shortened))."
+        if listing.recurrence != .none { s += " Repeats \(listing.recurrence.label.lowercased())." }
+        s += " Shared via FreeFood to reduce food waste."
+        return s
     }
 
     var body: some View {
@@ -24,10 +35,19 @@ struct ListingDetailView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(listing.title)
                         .font(.title2.bold())
+                    if listing.recurrence != .none {
+                        Label("Repeats \(listing.recurrence.label.lowercased())", systemImage: "repeat")
+                            .font(.caption.weight(.semibold))
+                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .background(.green.opacity(0.15), in: Capsule())
+                            .foregroundStyle(.green)
+                    }
                     Text(listing.details)
                         .font(.body)
                         .foregroundStyle(.secondary)
                 }
+
+                actionBar
 
                 infoGrid
 
@@ -60,6 +80,40 @@ struct ListingDetailView: View {
                 .accessibilityLabel("Delete listing")
             }
         }
+    }
+
+    private var actionBar: some View {
+        HStack(spacing: 12) {
+            Button {
+                guard !settings.hasLiked(listing.id) else { return }
+                store.like(listing)
+                settings.markLiked(listing.id)
+                likeCount += 1
+            } label: {
+                Label("\(likeCount)", systemImage: settings.hasLiked(listing.id) ? "heart.fill" : "heart")
+            }
+            .tint(.pink)
+            .disabled(settings.hasLiked(listing.id))
+
+            ShareLink(item: shareText) {
+                Label("Share", systemImage: "square.and.arrow.up")
+            }
+
+            if listing.recurrence != .none {
+                Button {
+                    settings.toggleSubscribe(listing.id)
+                } label: {
+                    Label(settings.isSubscribed(listing.id) ? "Subscribed" : "Subscribe",
+                          systemImage: settings.isSubscribed(listing.id) ? "bell.fill" : "bell")
+                }
+                .tint(.orange)
+            }
+
+            Spacer()
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .labelStyle(.titleAndIcon)
     }
 
     private var photoStrip: some View {
