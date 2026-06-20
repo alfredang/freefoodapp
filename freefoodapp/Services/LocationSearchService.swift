@@ -1,5 +1,5 @@
 import CoreLocation
-import MapKit
+@preconcurrency import MapKit
 
 @MainActor
 final class LocationSearchService: ObservableObject {
