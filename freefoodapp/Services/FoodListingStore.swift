@@ -34,7 +34,7 @@ final class FoodListingStore: ObservableObject {
 
     var sortedByDate: [FoodListing] {
         listings
-            .filter { $0.expiresAt > .now }
+            .filter { $0.isActive }
             .sorted { $0.combinedStartDate < $1.combinedStartDate }
     }
 
@@ -49,7 +49,7 @@ final class FoodListingStore: ObservableObject {
     }
 
     func purgeExpiredIfNeeded(now: Date = .now) {
-        for (id, listing) in pending where listing.expiresAt <= now { pending[id] = nil }
+        for (id, listing) in pending where !listing.isActive { pending[id] = nil }
         rebuild()
     }
 
@@ -58,7 +58,16 @@ final class FoodListingStore: ObservableObject {
         var byID: [UUID: FoodListing] = [:]
         for listing in fetched { byID[listing.id] = listing }
         for (id, listing) in pending where byID[id] == nil { byID[id] = listing }
-        listings = byID.values.filter { $0.expiresAt > .now }
+        listings = byID.values.filter { $0.isActive }
+    }
+
+    /// Best-effort removal of past/expired listings from the shared cloud. Only records the
+    /// current user created will actually delete (public-DB rule); others are simply hidden.
+    private func purgeStaleFromCloud(_ candidates: [FoodListing]) {
+        for listing in candidates where !listing.isActive {
+            let id = CKRecord.ID(recordName: listing.id.uuidString)
+            Task { try? await publicDB.deleteRecord(withID: id) }
+        }
     }
 
     // MARK: - CloudKit sync
@@ -71,10 +80,13 @@ final class FoodListingStore: ObservableObject {
             // No server-side sort (avoids needing a sortable index); sorted client-side by sortedByDate.
             let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
             let (matchResults, _) = try await publicDB.records(matching: query, resultsLimit: 200)
-            fetched = matchResults.compactMap { _, result -> FoodListing? in
+            let all = matchResults.compactMap { _, result -> FoodListing? in
                 guard let record = try? result.get() else { return nil }
                 return FoodListing(record: record)
             }
+            // Purge past events / >7-day-old posts from the cloud, and keep only active ones.
+            purgeStaleFromCloud(all)
+            fetched = all.filter { $0.isActive }
             // Any pending record the cloud now returns is confirmed — stop overlaying it.
             for id in pending.keys where fetched.contains(where: { $0.id == id }) {
                 pending[id] = nil

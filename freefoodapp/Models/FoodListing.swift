@@ -35,6 +35,13 @@ struct FoodListing: Identifiable, Codable, Hashable {
         ) ?? date
     }
 
+    /// A past event: the food's end time has already passed, so it's no longer available.
+    var hasEnded: Bool { combinedEndDate < .now }
+
+    /// Shown in the shared feed only while the event is still upcoming/ongoing
+    /// (not a past event) and the post is less than 7 days old. Anything else is purged.
+    var isActive: Bool { !hasEnded && expiresAt > .now }
+
     func distance(from location: CLLocation?) -> CLLocationDistance? {
         guard let location else { return nil }
         return CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
