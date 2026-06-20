@@ -33,8 +33,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Install Python deps
-        run: pip3 install --quiet cryptography
+        run: pip install --quiet cryptography
 
       - name: Import signing certificate & provisioning profile
         env:
