@@ -7,3 +7,4 @@ DerivedData/
 
 .playwright-mcp/
 .DS_Store
+*.pem

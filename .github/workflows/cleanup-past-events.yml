@@ -1,0 +1,28 @@
+name: Cleanup past events
+
+# Deletes past / expired FreeFood listings from the CloudKit public database.
+# Anyone can post (CloudKit uses the device's iCloud, no app account), and the app
+# can only delete a user's own records — so this server-side job, signed with a
+# CloudKit server-to-server key, cleans up everyone's stale listings.
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # hourly, on the hour (UTC)
+  workflow_dispatch:        # allow manual runs from the Actions tab
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install cryptography
+      - name: Delete past/expired listings (production)
+        env:
+          CKWS_KEY_ID: ${{ secrets.CKWS_KEY_ID }}
+          CKWS_PRIVATE_KEY: ${{ secrets.CKWS_PRIVATE_KEY }}
+          CK_CONTAINER: iCloud.com.tertiaryinfotech.freefood
+          CK_ENVIRONMENT: production
+        run: python3 scripts/cleanup_past_events.py
