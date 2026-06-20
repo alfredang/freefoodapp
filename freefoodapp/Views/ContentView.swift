@@ -63,6 +63,14 @@ struct ContentView: View {
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(2)
+
+            FeedbackView()
+                .tabItem { Label("Feedback", systemImage: "bubble.left.and.bubble.right.fill") }
+                .tag(3)
+
+            AboutView()
+                .tabItem { Label("About", systemImage: "info.circle") }
+                .tag(4)
         }
         .sheet(isPresented: $showingAddListing) {
             AddListingView()

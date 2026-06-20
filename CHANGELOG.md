@@ -9,6 +9,8 @@ The format is loosely based on [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- **About tab** — a dedicated About screen with the app description, developer (Tertiary Infotech Academy Pte Ltd), data/privacy summary, and version.
+- **Feedback tab** — send a feature request or bug report straight to the FreeFood team over WhatsApp.
 - **Human verification before posting** — a lightweight anti-bot check (type the shown code) to deter automated/fake listings.
 - **Recurring events** — bakeries, stalls, and offices can mark a listing as Daily or Weekly so regular free-food giveaways stay live (they roll forward to the next occurrence and aren't auto-deleted).
 - **Reduce-food-waste notice** — an in-app reminder (Add screen + Settings) that FreeFood exists to cut food waste; please don't post fictitious events.

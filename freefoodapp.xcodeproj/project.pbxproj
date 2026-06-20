@@ -12,6 +12,8 @@
 		01A000000000000000000020 /* FoodListing+CloudKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000020 /* FoodListing+CloudKit.swift */; };
 		01A000000000000000000021 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000021 /* AppSettings.swift */; };
 		01A000000000000000000022 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000022 /* SettingsView.swift */; };
+		01A000000000000000000023 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000023 /* AboutView.swift */; };
+		01A000000000000000000024 /* FeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000024 /* FeedbackView.swift */; };
 		01A000000000000000000003 /* FoodListingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000003 /* FoodListingStore.swift */; };
 		01A000000000000000000004 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000004 /* LocationManager.swift */; };
 		01A000000000000000000005 /* LocationSearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000005 /* LocationSearchService.swift */; };
@@ -30,6 +32,8 @@
 		01B000000000000000000020 /* FoodListing+CloudKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FoodListing+CloudKit.swift"; sourceTree = "<group>"; };
 		01B000000000000000000021 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		01B000000000000000000022 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		01B000000000000000000023 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
+		01B000000000000000000024 /* FeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackView.swift; sourceTree = "<group>"; };
 		01B000000000000000000003 /* FoodListingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodListingStore.swift; sourceTree = "<group>"; };
 		01B000000000000000000004 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		01B000000000000000000005 /* LocationSearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationSearchService.swift; sourceTree = "<group>"; };
@@ -106,6 +110,8 @@
 				01B000000000000000000009 /* FoodMapView.swift */,
 				01B000000000000000000010 /* AddListingView.swift */,
 				01B000000000000000000022 /* SettingsView.swift */,
+				01B000000000000000000023 /* AboutView.swift */,
+				01B000000000000000000024 /* FeedbackView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -194,6 +200,8 @@
 				01A000000000000000000020 /* FoodListing+CloudKit.swift in Sources */,
 				01A000000000000000000021 /* AppSettings.swift in Sources */,
 				01A000000000000000000022 /* SettingsView.swift in Sources */,
+				01A000000000000000000023 /* AboutView.swift in Sources */,
+				01A000000000000000000024 /* FeedbackView.swift in Sources */,
 				01A000000000000000000003 /* FoodListingStore.swift in Sources */,
 				01A000000000000000000004 /* LocationManager.swift in Sources */,
 				01A000000000000000000005 /* LocationSearchService.swift in Sources */,
@@ -326,7 +334,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = freefoodapp/freefoodapp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = GU9WTSTX9M;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -355,7 +363,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = freefoodapp/freefoodapp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = GU9WTSTX9M;
 				GENERATE_INFOPLIST_FILE = NO;
