@@ -8,7 +8,7 @@ struct FreeFoodApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
                 .environmentObject(store)
                 .environmentObject(locationManager)
                 .environmentObject(settings)

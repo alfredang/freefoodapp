@@ -17,7 +17,7 @@
 		01A000000000000000000003 /* FoodListingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000003 /* FoodListingStore.swift */; };
 		01A000000000000000000004 /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000004 /* LocationManager.swift */; };
 		01A000000000000000000005 /* LocationSearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000005 /* LocationSearchService.swift */; };
-		01A000000000000000000006 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000006 /* ContentView.swift */; };
+		01A000000000000000000006 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000006 /* RootView.swift */; };
 		01A000000000000000000007 /* ListingFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000007 /* ListingFeedView.swift */; };
 		01A000000000000000000008 /* ListingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000008 /* ListingDetailView.swift */; };
 		01A000000000000000000009 /* FoodMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B000000000000000000009 /* FoodMapView.swift */; };
@@ -37,7 +37,7 @@
 		01B000000000000000000003 /* FoodListingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodListingStore.swift; sourceTree = "<group>"; };
 		01B000000000000000000004 /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		01B000000000000000000005 /* LocationSearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationSearchService.swift; sourceTree = "<group>"; };
-		01B000000000000000000006 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		01B000000000000000000006 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		01B000000000000000000007 /* ListingFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListingFeedView.swift; sourceTree = "<group>"; };
 		01B000000000000000000008 /* ListingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListingDetailView.swift; sourceTree = "<group>"; };
 		01B000000000000000000009 /* FoodMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodMapView.swift; sourceTree = "<group>"; };
@@ -104,7 +104,7 @@
 		01D000000000000000000005 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				01B000000000000000000006 /* ContentView.swift */,
+				01B000000000000000000006 /* RootView.swift */,
 				01B000000000000000000007 /* ListingFeedView.swift */,
 				01B000000000000000000008 /* ListingDetailView.swift */,
 				01B000000000000000000009 /* FoodMapView.swift */,
@@ -205,7 +205,7 @@
 				01A000000000000000000003 /* FoodListingStore.swift in Sources */,
 				01A000000000000000000004 /* LocationManager.swift in Sources */,
 				01A000000000000000000005 /* LocationSearchService.swift in Sources */,
-				01A000000000000000000006 /* ContentView.swift in Sources */,
+				01A000000000000000000006 /* RootView.swift in Sources */,
 				01A000000000000000000007 /* ListingFeedView.swift in Sources */,
 				01A000000000000000000008 /* ListingDetailView.swift in Sources */,
 				01A000000000000000000009 /* FoodMapView.swift in Sources */,

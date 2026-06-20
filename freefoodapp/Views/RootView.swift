@@ -1,6 +1,7 @@
 import SwiftUI
 
-struct ContentView: View {
+/// App root: the bottom tab bar hosting Nearby, Map, Settings, Feedback, and About.
+struct RootView: View {
     @EnvironmentObject private var store: FoodListingStore
     @EnvironmentObject private var locationManager: LocationManager
     @EnvironmentObject private var settings: AppSettings
