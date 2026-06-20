@@ -49,6 +49,17 @@ struct ContentView: View {
         .sheet(isPresented: $showingAddListing) {
             AddListingView()
         }
+        .alert(
+            "Heads up",
+            isPresented: Binding(
+                get: { store.statusMessage != nil },
+                set: { if !$0 { store.statusMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(store.statusMessage ?? "")
+        }
         .task {
             locationManager.requestLocation()
             store.purgeExpiredIfNeeded()
