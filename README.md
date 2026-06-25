@@ -10,17 +10,23 @@
 
 **A native iOS app for sharing leftover food nearby and reducing food waste.**
 
+[![Download on the App Store](https://img.shields.io/badge/Download_on_the-App_Store-0D96F6.svg?logo=apple&logoColor=white)](https://apps.apple.com/app/freefood-share-leftovers/id6782157783)
+
+📱 **Now live on the App Store:** [FreeFood: Share Leftovers](https://apps.apple.com/app/freefood-share-leftovers/id6782157783)
+
 [Report Bug](https://github.com/alfredang/freefoodapp/issues) . [Request Feature](https://github.com/alfredang/freefoodapp/issues)
 
 </div>
 
-## Screenshot
+## Screenshots
 
-![FreeFood iOS screenshot](screenshot.png)
+| Nearby feed | Listing details | Map view |
+| --- | --- | --- |
+| ![Feed](docs/screenshot-feed.png) | ![Detail](docs/screenshot-detail.png) | ![Map](docs/screenshot-map.png) |
 
 ## About
 
-FreeFood is a SwiftUI iOS app for posting and discovering free leftover food from events, offices, meetups, and community spaces. It focuses on fast local sharing: create a listing with photos, location, schedule, and details; browse a searchable feed; and view available food on an Apple Map. Published on the App Store as "FreeFood: Share Leftovers".
+FreeFood is a SwiftUI iOS app for posting and discovering free leftover food from events, offices, meetups, and community spaces. It focuses on fast local sharing: create a listing with photos, location, schedule, and details; browse a searchable feed; and view available food on an Apple Map. Available on the App Store as **[FreeFood: Share Leftovers](https://apps.apple.com/app/freefood-share-leftovers/id6782157783)**.
 
 ### Key Features
 
@@ -95,6 +101,10 @@ freefoodapp/
 |   +-- Info.plist
 |   +-- PrivacyInfo.xcprivacy
 |   +-- freefoodappApp.swift
++-- docs/
+|   +-- screenshot-feed.png
+|   +-- screenshot-detail.png
+|   +-- screenshot-map.png
 +-- ExportOptions.plist
 +-- screenshot.png
 +-- README.md
