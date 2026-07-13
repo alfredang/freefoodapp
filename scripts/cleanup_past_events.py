@@ -105,14 +105,25 @@ def main():
             break
 
     print(f"Scanned {scanned} record(s); {len(to_delete)} past/expired to delete.")
+    failures = 0
     for i in range(0, len(to_delete), 200):
         batch = to_delete[i:i + 200]
         # forceDelete, not delete: plain "delete" requires each record's recordChangeTag,
         # which the query above doesn't carry.
         body = {"operations": [{"operationType": "forceDelete", "record": {"recordName": rn}} for rn in batch]}
         resp = request(db_path + "/records/modify", body, key)
+        # CloudKit answers 200 even when individual operations fail, reporting each one
+        # in-band. Surface those instead of silently reporting a green no-op.
         deleted = [r for r in resp.get("records", []) if r.get("deleted")]
+        for r in resp.get("records", []):
+            if not r.get("deleted"):
+                failures += 1
+                print(f"  FAILED {r.get('recordName')}: "
+                      f"{r.get('serverErrorCode')} — {r.get('reason')}", file=sys.stderr)
         print(f"Deleted {len(deleted)}/{len(batch)} in batch {i // 200 + 1}.")
+
+    if failures:
+        sys.exit(f"Cleanup failed: {failures} record(s) could not be deleted.")
     print("Cleanup complete.")
 
 
