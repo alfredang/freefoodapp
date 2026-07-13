@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-FreeFood (App Store listing "FreeFood: Share Leftovers") is a native SwiftUI iOS app for posting and discovering free leftover food nearby. Create a listing with photos, location, date, and a start/end time window; browse a searchable feed; and view listings on an Apple Map. Data is **local-only** — there is no backend and no user account.
+FreeFood (App Store listing "FreeFood: Share Leftovers") is a native SwiftUI iOS app for posting and discovering free leftover food nearby. Create a listing with photos, location, date, and a start/end time window; browse a searchable feed; and view listings on an Apple Map.
+
+Data lives in the **CloudKit public database** (container `iCloud.com.tertiaryinfotech.freefood`) so every user sees the same shared listings. There is **no user account** — CloudKit uses the device's iCloud identity. Browsing works signed-out; posting requires the device to be signed into iCloud.
 
 ## Build & run
 
@@ -26,7 +28,11 @@ There is no test target, no linter, and no package manager — this is a plain `
 
 The app is a single target. `FreeFoodApp` (`freefoodapp/freefoodappApp.swift`) injects two `@StateObject`s as environment objects consumed throughout the view tree:
 
-- **`FoodListingStore`** (`Services/`) — `@MainActor ObservableObject`, the single source of truth for listings. Persists `[FoodListing]` as ISO-8601 Codable JSON at `Application Support/FreeFood/listings.json`. Key behavior: **listings auto-expire 7 days after `createdAt`** — `purgeExpiredIfNeeded()` runs on every read/add (`sortedByDate`, `search`, `add`), so stale posts silently disappear. There is no separate cleanup scheduler; expiry is lazy on access.
+- **`FoodListingStore`** (`Services/`) — `@MainActor ObservableObject`, the single source of truth for listings, backed by the **CloudKit public database** (`publicCloudDatabase`). Two things to know:
+  - **Eventual consistency.** A record you just saved is often missing from the next query for a few seconds. Locally-saved records are held in `pending` and overlaid on query results (`rebuild()`) until a fetch confirms them, so a freshly-posted listing doesn't vanish.
+  - **Expiry is a two-layer system.** Expired listings (past their end time, or >7 days old) are always *hidden* client-side by the `isActive` filter, so users never see stale posts. *Deleting* them from the cloud is separate: CloudKit's public-DB rule lets a device delete only records **its own user created**, so `purgeStaleFromCloud()` can't sweep strangers' posts. That's what the hourly **`.github/workflows/cleanup-past-events.yml`** job is for — it holds a CloudKit server-to-server key and deletes everyone's expired records (`scripts/cleanup_past_events.py`). If that job is disabled, the app still looks correct; expired records just accumulate invisibly in CloudKit.
+
+  ⚠️ CloudKit Web Services quirk: deleting via the REST API must use `operationType: "forceDelete"`. Plain `"delete"` requires each record's `recordChangeTag`, which a query response doesn't carry, and fails with `BAD_REQUEST: missing required field 'recordChangeTag'`.
 - **`LocationManager`** (`Services/`) — wraps CoreLocation for permission + current location, used to rank the feed by nearest listing.
 - **`LocationSearchService`** (`Services/`) — MapKit `MKLocalSearch` place lookup; owned locally by `AddListingView` (not a global env object) to resolve a typed query into a coordinate.
 

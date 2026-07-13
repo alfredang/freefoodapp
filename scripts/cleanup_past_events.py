@@ -107,7 +107,9 @@ def main():
     print(f"Scanned {scanned} record(s); {len(to_delete)} past/expired to delete.")
     for i in range(0, len(to_delete), 200):
         batch = to_delete[i:i + 200]
-        body = {"operations": [{"operationType": "delete", "record": {"recordName": rn}} for rn in batch]}
+        # forceDelete, not delete: plain "delete" requires each record's recordChangeTag,
+        # which the query above doesn't carry.
+        body = {"operations": [{"operationType": "forceDelete", "record": {"recordName": rn}} for rn in batch]}
         resp = request(db_path + "/records/modify", body, key)
         deleted = [r for r in resp.get("records", []) if r.get("deleted")]
         print(f"Deleted {len(deleted)}/{len(batch)} in batch {i // 200 + 1}.")
